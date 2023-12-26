@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decimal to Binary Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://kit.fontawesome.com/d122be00a8.js" crossorigin="anonymous"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #7f5a83, #0d324d);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .glassmorphism {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 2rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .cell {
+      width: 3rem; height: 3rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none;
+      transition: background-color 0.3s, border-color 0.3s;
+      border-radius: 0.5rem;
+      color: white;
+    }
+    .cell.on { background-color: rgba(114, 9, 183, 0.8); }
+    .cell.off { background-color: rgba(255, 255, 255, 0.1); }
+    .cell.number { cursor: default; background-color: rgba(59, 130, 246, 0.6); }
+    .cell.correct { background-color: rgba(76, 201, 240, 0.6); }
+    button {
+      background-color: #4cc9f0;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #3ab0e2;
+    }
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .overlay.show {
+      display: flex;
+    }
+    .popup {
+      display: none;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 2rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .popup.show {
+      display: block;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    
+    #giveUpButton {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 1rem;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    #giveUpButton:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="glassmorphism">
+    <div id="gridSizeSelector" class="text-center grid-size-selector">
+      <label for="gridSize" class="block text-lg font-medium text-white">Select grid size:</label>
+      <select id="gridSize" class="block w-full px-3 py-2 mt-1 text-white bg-white border border-gray-300 rounded-md bg-opacity-10">
+        <option value="4">4x4</option>
+        <option value="5">5x5</option>
+        <option value="6">6x6</option>
+      </select>
+      <button onclick="initGame()" class="mt-3">
+        Start Game
+      </button>
+    </div>
+    <div id="app" class="mt-10 text-center">
+      <!-- Game board will be dynamically generated here -->
+    </div>
+    <div class="button-container">
+      <button id="giveUpButton" onclick="revealSolution()" class="mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+        Give Up
+      </button>
+    </div>
+  </div>
+  <div id="overlay" class="overlay">
+    <div id="popup" class="popup">
+      <p class="text-xl font-semibold text-white">Congratulations! You've solved the puzzle!</p>
+      <button onclick="showGridSizeSelector()">
+        Play Again
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let boardSize, board, targetRowSums, targetColSums;
+
+    function showGridSizeSelector() {
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+      app.style.display = 'none';
+
+      document.getElementById('gridSizeSelector').style.display = 'block';
+      document.getElementById('overlay').classList.remove('show');
+      document.getElementById('popup').classList.remove('show');
+      document.getElementById('giveUpButton').style.display = 'none';
+    }
+
+    function generateRandomBinaryArray() {
+      return Array.from({ length: boardSize }, () => Math.round(Math.random()));
+    }
+
+    function binaryToDecimal(binaryArray) {
+      return binaryArray.reduce((acc, bit, index) => acc + bit * Math.pow(2, boardSize - index - 1), 0);
+    }
+
+    function generateSums() {
+      let tempBoard = Array.from({ length: boardSize }, generateRandomBinaryArray);
+      targetRowSums = tempBoard.map(row => binaryToDecimal(row));
+      targetColSums = Array.from({ length: boardSize }, (_, colIndex) => binaryToDecimal(tempBoard.map(row => row[colIndex])));
+    }
+
+    function createBoard() {
+      board = Array.from({ length: boardSize }, () => Array(boardSize).fill(0));
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+
+      const grid = document.createElement('div');
+      grid.className = `grid grid-cols-${boardSize + 1} gap-4`;
+      app.appendChild(grid);
+
+      for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell off';
+          cell.onclick = () => toggleCell(row, col);
+          grid.appendChild(cell);
+        }
+
+        const sumCell = document.createElement('div');
+        sumCell.className = 'cell number';
+        sumCell.textContent = targetRowSums[row];
+        grid.appendChild(sumCell);
+      }
+
+      for (let col = 0; col < boardSize; col++) {
+        const sumCell = document.createElement('div');
+        sumCell.className = 'cell number';
+        sumCell.textContent = targetColSums[col];
+        grid.appendChild(sumCell);
+      }
+
+      grid.appendChild(document.createElement('div'));
+    }
+
+    function toggleCell(row, col) {
+      board[row][col] ^= 1;
+      updateBoard();
+    }
+
+    function updateBoard(checkWinCondition = true) {
+      const cells = document.querySelectorAll('.grid .cell:not(.number)');
+      cells.forEach((cell, index) => {
+        const row = Math.floor(index / boardSize);
+        const col = index % boardSize;
+        cell.className = `cell ${board[row][col] ? 'on' : 'off'}`;
+      });
+
+      updateSumCells();
+      if (checkWinCondition) {
+        checkWin();
+      }
+    }
+
+    function calculateSum(array) {
+      return array.reduce((sum, value, index) => sum + value * Math.pow(2, boardSize - index - 1), 0);
+    }
+
+    function updateSumCells() {
+      const rowSumCells = document.querySelectorAll('.grid > .number:nth-child(' + (boardSize + 1) + 'n)');
+      rowSumCells.forEach((cell, index) => {
+        const sum = calculateSum(board[index]);
+        cell.textContent = targetRowSums[index];
+        cell.className = `cell number ${sum === targetRowSums[index] ? 'correct' : ''}`;
+      });
+
+      const colSumCells = document.querySelectorAll('.grid > .number:not(:nth-child(' + (boardSize + 1) + 'n))');
+      colSumCells.forEach((cell, colIndex) => {
+        const colArray = board.map(row => row[colIndex]);
+        const sum = calculateSum(colArray);
+        cell.textContent = targetColSums[colIndex];
+        cell.className = `cell number ${sum === targetColSums[colIndex] ? 'correct' : ''}`;
+      });
+    }
+
+    function checkWin() {
+      const allCorrect = document.querySelectorAll('.cell.number.correct').length === boardSize * 2;
+      if (allCorrect) {
+        document.getElementById('overlay').classList.add('show');
+        document.getElementById('popup').classList.add('show');
+      }
+    }
+
+    function revealSolution() {
+      for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize; col++) {
+          const correctValue = (targetRowSums[row] >> (boardSize - col - 1)) & 1;
+          board[row][col] = correctValue;
+        }
+      }
+      updateBoard(false); // Don't check win condition
+    
+      // Change the "Give Up" button to a "Play Again" button
+      const giveUpButton = document.getElementById('giveUpButton');
+      giveUpButton.textContent = 'Play Again';
+      giveUpButton.onclick = showGridSizeSelector;
+    }
+
+    function initGame() {
+      const giveUpButton = document.getElementById('giveUpButton');
+      document.getElementById('gridSizeSelector').style.display = 'none';
+      boardSize = parseInt(document.getElementById('gridSize').value);
+      generateSums();
+      createBoard();
+      document.getElementById('app').style.display = 'block';
+      giveUpButton.textContent = 'Give Up';
+      giveUpButton.onclick = revealSolution;
+      giveUpButton.style.display = 'block';
+    }
+    
+
+    showGridSizeSelector();
+  </script>
+</body>
+</html>
