@@ -1,0 +1,121 @@
+---
+import { getAbsoluteLocaleUrl, getRelativeLocaleUrl } from 'astro:i18n';
+import Board from '../../components/Board.astro';
+import Note from '../../components/Note.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { localePaths, useTranslations } from '../../i18n';
+import Base from '../../layouts/Base.astro';
+import { starts } from '../../scripts/starts';
+import '../../styles/home.css';
+
+export const getStaticPaths = localePaths;
+
+const { locale } = Astro.props;
+const { home: t, daily } = useTranslations(locale);
+const url = getAbsoluteLocaleUrl(locale);
+
+const jsonLd = [
+  // Google takes the site name in search results mainly from WebSite data.
+  { '@type': 'WebSite', name: 'Binary Game', url, inLanguage: locale },
+  {
+    '@type': 'WebApplication',
+    name: 'Binary Game',
+    url,
+    description: t.description,
+    inLanguage: locale,
+    applicationCategory: 'EducationalApplication',
+    genre: 'Puzzle',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+    educationalUse: 'Practice',
+    teaches: t.teaches,
+    author: { '@type': 'Person', name: 'Leon Kohlhaußen', url: 'https://leonkohli.dev' },
+  },
+];
+---
+
+<Base
+  locale={locale}
+  path=""
+  title={t.title}
+  description={t.description}
+  shareTitle="Binary Game"
+  jsonLd={jsonLd}
+  handwriting
+>
+  <SiteHeader locale={locale} path="" />
+  <main class="home">
+    <header class="hero">
+      <h1>{t.heading}</h1>
+      <p class="lede">{t.lede}</p>
+    </header>
+
+    <section class="card demo" data-demo aria-label={t.demo}>
+      <div class="stage" data-stage>
+        <Board locale={locale} spec={starts.demo} />
+        <Note name="tap" to="first-bit" side="top" seed={7}>
+          {t.notes.tap}
+        </Note>
+        <Note name="target" to="row-target" side="top">
+          {t.notes.target}
+        </Note>
+        <Note name="sum" to="total" side="bottom" seed={4}>
+          {t.notes.sum}
+        </Note>
+      </div>
+      <div class="result">
+        <p class="feedback" role="status" data-feedback></p>
+        <p class="visually-hidden" role="status" data-live></p>
+        <button type="button" class="link-button" data-action hidden></button>
+      </div>
+    </section>
+
+    <div class="cta">
+      <a class="button primary" href={getRelativeLocaleUrl(locale, 'play/')}>
+        {t.play}
+      </a>
+      <a class="button secondary" href={getRelativeLocaleUrl(locale, 'learn/')}>
+        {t.learn}
+      </a>
+    </div>
+    <p class="daily-link">
+      <a href={getRelativeLocaleUrl(locale, 'daily/')}>{daily.link}</a>
+    </p>
+
+    <section class="then" aria-labelledby="then-heading">
+      <div class="then-text">
+        <h2 id="then-heading">{t.grid.heading}</h2>
+        <p>{t.grid.text}</p>
+      </div>
+      <div class="stage" data-stage>
+        <Board locale={locale} spec={starts.preview} />
+        <Note to="row-target" side="top" seed={17}>
+          {t.grid.notes.rows}
+        </Note>
+        <Note to="col-3-target" side="bottom" seed={18}>
+          {t.grid.notes.cols}
+        </Note>
+      </div>
+    </section>
+
+    <p class="facts">{t.facts}</p>
+  </main>
+
+  <script>
+    import { lessonText, pageLocale } from '../../i18n';
+    import { demo } from '../../scripts/lessons';
+
+    const t = lessonText[pageLocale()];
+    const noop = () => {};
+    const signal = new AbortController().signal;
+    demo({ root: document.querySelector<HTMLElement>('[data-demo]')!, t, done: noop, signal });
+  </script>
+  <style>
+    .daily-link {
+      margin: 1rem 0 0;
+      text-align: center;
+    }
+  </style>
+</Base>

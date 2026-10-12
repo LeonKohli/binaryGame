@@ -1,0 +1,102 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import Board from '../../../components/Board.astro';
+import SiteHeader from '../../../components/SiteHeader.astro';
+import { localePaths, useTranslations } from '../../../i18n';
+import Base from '../../../layouts/Base.astro';
+import { blankGrid } from '../../../scripts/starts';
+import { DEFAULT_SIZE, playPath, SIZES } from '../../../scripts/sizes';
+import '../../../styles/play.css';
+
+// One page per grid size (/play/ for the default, /play/3/ and so on), so the page is built with the
+// board it shows: the size lives in the URL, where the HTML can know it, not in the browser's storage.
+export const getStaticPaths = () =>
+  localePaths().flatMap(({ params, props }) =>
+    SIZES.map((size) => ({
+      params: { ...params, size: size === DEFAULT_SIZE ? undefined : String(size) },
+      props: { ...props, size },
+    })),
+  );
+
+const { locale, size } = Astro.props;
+const { play: t, game } = useTranslations(locale);
+const learnUrl = getRelativeLocaleUrl(locale, 'learn/');
+const path = playPath(size);
+const bigger = SIZES[SIZES.indexOf(size) + 1];
+---
+
+<Base
+  locale={locale}
+  path={path}
+  title={size === DEFAULT_SIZE ? t.title : t.sizeTitle(size)}
+  description={t.description}
+>
+  <SiteHeader locale={locale} path={path} />
+  <main class="play">
+    <h1 class="visually-hidden">{t.heading}</h1>
+
+    <section class="game" data-game data-size={size} aria-label={t.puzzle}>
+      <div class="hud">
+        <nav class="sizes" aria-label={t.sizesNav}>
+          <span class="sizes-label" aria-hidden="true">
+            {t.sizes}
+          </span>
+          <div class="track">
+            {SIZES.map((option) => (
+              <a
+                href={getRelativeLocaleUrl(locale, playPath(option))}
+                aria-current={option === size ? 'page' : undefined}
+                aria-label={t.size(option)}
+              >
+                {option}
+              </a>
+            ))}
+          </div>
+        </nav>
+        <p class="clock" data-timer>
+          0:00
+        </p>
+      </div>
+
+      <div class="field">
+        <Board locale={locale} spec={blankGrid(size)} aria-describedby="rules" />
+      </div>
+      <p class="visually-hidden" id="rules">
+        {t.lede}
+      </p>
+      <noscript>
+        <p class="status">
+          {t.noscript} <a href={learnUrl}>{t.noscriptLink}</a>
+          {t.noscriptAfter}
+        </p>
+      </noscript>
+
+      {/* The best time and the verdict share one line: the best time shows until a round ends. */}
+      <div class="message">
+        <p class="status" data-status role="status"></p>
+        <p class="best" data-best></p>
+      </div>
+      <p class="visually-hidden" data-progress role="status"></p>
+      <div class="cta actions">
+        <button type="button" class="button primary" data-new>
+          {t.newPuzzle}
+        </button>
+        <button type="button" class="button secondary" data-solve>
+          {t.showSolution}
+        </button>
+        {bigger && (
+          <a class="button secondary" href={getRelativeLocaleUrl(locale, playPath(bigger))} data-up hidden>
+            {game.bigger(bigger)}
+          </a>
+        )}
+      </div>
+    </section>
+  </main>
+
+  <script>
+    import { gameText, pageLocale } from '../../../i18n';
+    import { mountGame } from '../../../scripts/game';
+
+    mountGame(document.querySelector<HTMLElement>('[data-game]')!, gameText[pageLocale()]);
+  </script>
+</Base>

@@ -1,0 +1,121 @@
+---
+import { type Locale, useTranslations } from '../i18n';
+import { placeValue, toNumber } from '../scripts/bits';
+import type { HTMLAttributes } from 'astro/types';
+import type { BoardSpec } from '../scripts/starts';
+import '../styles/bits.css';
+import '../styles/board.css';
+
+// The board's only markup, rendered at build time so it has its final size at first paint.
+// Its script makes it a <bit-board> (src/scripts/board.ts), which reads it back and makes it playable.
+
+interface Props extends HTMLAttributes<'div'> {
+  locale: Locale;
+  spec: BoardSpec;
+}
+
+const { locale, spec, ...attrs } = Astro.props;
+const { board: t, play } = useTranslations(locale);
+const { cols, rowTargets, colTargets, side = false, equation = false } = spec;
+const rows = rowTargets.length;
+const bits = spec.bits ?? rowTargets.map(() => Array<number>(cols).fill(0));
+const locked = new Set(spec.lockedRows);
+const firstRow = bits.findIndex((_, r) => !locked.has(r));
+// A target the browser has yet to deal is neither matched nor over.
+const line = (name: string, target: number | null, value: number) => ({
+  name,
+  target,
+  value,
+  match: value === target,
+  over: target !== null && value > target,
+});
+const rowLines = rowTargets.map((target, r) => line(t.row(r + 1), target, toNumber(bits[r]!)));
+const colLines = (colTargets ?? []).map((target, c) =>
+  line(t.column(c + 1), target, toNumber(bits.map((row) => row[c]!))),
+);
+const lines = bits.map((row, r) => ({ row, r, place: placeValue(rows, r), sum: rowLines[r]! }));
+const places = Array.from({ length: cols }, (_, c) => placeValue(cols, c));
+---
+
+<bit-board
+  class:list={['board', { 'no-side': !side, 'has-cols': colTargets, 'has-equation': equation }]}
+  data-board
+  data-cols={cols}
+  data-rows={rows}
+  role="group"
+  aria-label={play.bits}
+  {...attrs}
+>
+  {side && <div class="corner" aria-hidden="true" />}
+  {places.map((value) => (
+    <div class="place" aria-hidden="true">
+      {value}
+    </div>
+  ))}
+  <div class="corner" aria-hidden="true"></div>
+  {lines.map(({ row, r, place, sum }) => (
+    <>
+      {side && (
+        <div class="place side" aria-hidden="true">
+          {place}
+        </div>
+      )}
+      {row.map((bit, c) => (
+        <button
+          type="button"
+          class="bit"
+          data-r={r}
+          data-c={c}
+          tabindex={r === firstRow && c === 0 ? 0 : -1}
+          aria-label={rows === 1 ? t.bitWorth(places[c]!) : t.cell(r + 1, c + 1)}
+          aria-disabled={locked.has(r) ? 'true' : undefined}
+          aria-pressed={bit ? 'true' : 'false'}
+        >
+          <span class="digit" aria-hidden="true">
+            {bit}
+          </span>
+        </button>
+      ))}
+      <div class:list={['sum row', { match: sum.match, over: sum.over }]} data-target={sum.target}>
+        <span class="target">
+          <span class="visually-hidden">{t.target(sum.name)}</span>
+          <span data-value>{sum.target}</span>
+        </span>
+        <span class="visually-hidden">{t.now}</span>
+        <span class:list={['current', { 'visually-hidden': equation }]}>{sum.target === null ? '' : sum.value}</span>
+        <span class="visually-hidden">{sum.match ? t.matches : ''}</span>
+      </div>
+    </>
+  ))}
+  {colLines.length > 0 && side && <div class="corner" aria-hidden="true" />}
+  {colLines.map(({ name, target, value, match, over }) => (
+    <div class:list={['sum col', { match, over }]} data-target={target}>
+      <span class="target">
+        <span class="visually-hidden">{t.target(name)}</span>
+        <span data-value>{target}</span>
+      </span>
+      <span class="visually-hidden">{t.now}</span>
+      <span class:list={['current', { 'visually-hidden': equation }]}>{target === null ? '' : value}</span>
+      <span class="visually-hidden">{match ? t.matches : ''}</span>
+    </div>
+  ))}
+  {equation && (
+    <>
+      {side && <div class="corner" aria-hidden="true" />}
+      {places.map((value, c) => (
+        <div class:list={['addend', { lit: bits[0]![c] === 1 }]} aria-hidden="true">
+          {bits[0]![c] ? value : 0}
+        </div>
+      ))}
+      <div class:list={['total', { match: rowLines[0]!.match }]} aria-hidden="true">
+        = {rowLines[0]!.value}
+      </div>
+    </>
+  )}
+</bit-board>
+
+<script>
+  import { BitBoard } from '../scripts/board';
+
+  customElements.define('bit-board', BitBoard);
+</script>

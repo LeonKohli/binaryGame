@@ -1,0 +1,209 @@
+---
+import { createHash } from 'node:crypto';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import Board from '../../components/Board.astro';
+import Note, { type Props as NoteProps } from '../../components/Note.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { localePaths, useTranslations } from '../../i18n';
+import Base from '../../layouts/Base.astro';
+import { playPath } from '../../scripts/sizes';
+import { starts } from '../../scripts/starts';
+import '../../styles/learn.css';
+
+export const getStaticPaths = localePaths;
+
+const { locale } = Astro.props;
+const { learn: t, lesson } = useTranslations(locale);
+
+// Runs before the first paint, so learn.css shows the step named in the URL (`#step-3`, `#lesson-3` or
+// `#step-03`, as src/scripts/tutorial.ts reads it) instead of step 1 until the page's script loads.
+// Astro hashes only the scripts it processes for the CSP, so this inline one adds its own hash.
+const boot =
+  '{const s=/^#(?:step|lesson)-(\\d+)$/.exec(location.hash);if(s)document.documentElement.dataset.step=String(+s[1])}';
+Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(boot).digest('base64')}`);
+
+// The lessons in src/scripts/lessons.ts, in order. The first four count along one row; from `stack`
+// on, the row becomes a grid.
+const ids = Object.keys(t.steps) as (keyof typeof t.steps)[];
+const firstGridStep = ids.indexOf('stack');
+const steps = ids.map((id, i) => ({ ...t.steps[id], id, n: i + 1 }));
+const parts = [
+  { label: t.parts[0], steps: steps.slice(0, firstGridStep) },
+  { label: t.parts[1], steps: steps.slice(firstGridStep) },
+];
+// Where each lesson's notes sit, by lesson and note. The column lesson shows its notes once the column has turned.
+const notes: Record<string, Omit<NoteProps, 'name'>> = {
+  'one.tap': { to: 'first-bit', side: 'left' },
+  'one.target': { to: 'row-target', side: 'right' },
+  'two.place': { to: 'first-bit', side: 'top' },
+  'four.biggest': { to: 'first-bit', side: 'top' },
+  'stack.sum': { to: 'row-2-sum', side: 'bottom' },
+  'columns.down': { to: 'side-place', side: 'left', narrow: 'top', hidden: true },
+  'columns.target': { to: 'col-2-target', side: 'bottom', hidden: true },
+  'fix.wrong': { to: 'col-3-target', side: 'right' },
+};
+const playUrl = (size: number) => getRelativeLocaleUrl(locale, playPath(size));
+
+const table = Array.from({ length: 16 }, (_, n) => ({
+  n,
+  binary: n.toString(2).padStart(4, '0'),
+  sum: [8, 4, 2, 1].filter((value) => n & value).join(' + ') || '0',
+}));
+
+const faqPage = {
+  '@type': 'FAQPage',
+  inLanguage: locale,
+  mainEntity: t.faq.map(({ q, a }) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+---
+
+<Base locale={locale} path="learn/" title={t.title} description={t.description} jsonLd={[faqPage]} handwriting>
+  {/* eslint-disable-next-line astro/no-set-html-directive -- a constant; the CSP hash above is of this exact string */}
+  <script is:inline slot="head" set:html={boot} />
+  <SiteHeader locale={locale} path="learn/" />
+  <main class="learn">
+    <div class="tutorial" data-tutorial>
+      <header class="tutorial-head">
+        <h1>{t.heading}</h1>
+        <p class="lede">{t.lede}</p>
+        <nav class="progress" aria-label={t.progress}>
+          {parts.map((part) => (
+            <div class="part">
+              <p class="part-label">{part.label}</p>
+              <ol class="segments-bar">
+                {part.steps.map((step) => (
+                  <li>
+                    <a href={`#lesson-${step.n}`} data-segment>
+                      <span class="visually-hidden">{step.title}</span>
+                      <span class="visually-hidden" data-done hidden>
+                        {t.done}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </nav>
+        <div class="counter-row">
+          <p class="counter">
+            <span data-counter>{lesson.step(1, steps.length)}</span>
+            <button type="button" class="link-button reset" data-reset hidden>
+              {t.reset}
+            </button>
+          </p>
+          <a class="skip" href={`#lesson-${firstGridStep + 1}`} data-skip>
+            {t.skip}
+          </a>
+        </div>
+      </header>
+
+      {steps.map((step) => (
+        <section class="step" id={`lesson-${step.n}`} data-lesson={step.id} aria-labelledby={`step-${step.n}-title`}>
+          <h2 id={`step-${step.n}-title`} tabindex="-1">
+            {step.title}
+          </h2>
+          <p class="step-text">{step.text}</p>
+          <div class:list={['stage', `lesson-${step.id}`]} data-stage>
+            <Board locale={locale} spec={starts[step.id]} />
+            {Object.entries(step.notes).map(([key, text]) => (
+              <Note name={key} {...notes[`${step.id}.${key}`]!}>
+                {text}
+              </Note>
+            ))}
+          </div>
+          <div class="result">
+            <p class="feedback" role="status" data-feedback />
+            <p class="visually-hidden" role="status" data-live />
+            <button type="button" class="link-button" data-action hidden>
+              {step.id === 'columns' ? t.replay : ''}
+            </button>
+          </div>
+        </section>
+      ))}
+
+      <div class="step-nav">
+        <button type="button" class="button secondary" data-back disabled>
+          {t.back}
+        </button>
+        <button type="button" class="button secondary" data-next>
+          {t.next}
+        </button>
+        {/* The last lesson ends in the game, at the size just practised or one bigger. */}
+        <div class="handoff" data-handoff hidden>
+          <a class="button secondary" href={playUrl(4)}>
+            {t.playBig}
+          </a>
+          <a class="button primary" href={playUrl(3)}>
+            {t.playSmall}
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <article class="guide">
+      <section>
+        <h2>{t.table.heading}</h2>
+        <div class="table-wrap">
+          <table class="number-table">
+            <thead>
+              <tr>
+                <th scope="col">{t.table.decimal}</th>
+                <th scope="col">{t.table.binary}</th>
+                <th scope="col">{t.table.sum}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {table.map(({ n, binary, sum }) => (
+                <tr>
+                  <td>{n}</td>
+                  <td class="binary">{binary}</td>
+                  <td>{sum}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>{t.systems.heading}</h2>
+        <p>{t.systems.intro}</p>
+        <p>
+          {t.systems.example} <strong>1101</strong>.
+        </p>
+        <p>{t.systems.back}</p>
+      </section>
+
+      <section>
+        <h2>{t.tips.heading}</h2>
+        <ul>
+          {t.tips.items.map((tip) => (
+            <li>{tip}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2>{t.faqHeading}</h2>
+        {t.faq.map(({ q, a }) => (
+          <details>
+            <summary>{q}</summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </section>
+    </article>
+  </main>
+
+  <script>
+    import { lessonText, pageLocale } from '../../i18n';
+    import { mountTutorial } from '../../scripts/tutorial';
+
+    mountTutorial(document.querySelector<HTMLElement>('[data-tutorial]')!, lessonText[pageLocale()]);
+  </script>
+</Base>

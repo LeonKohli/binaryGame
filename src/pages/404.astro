@@ -1,0 +1,49 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import SiteHeader from '../components/SiteHeader.astro';
+import { defaultLocale, locales, useTranslations } from '../i18n';
+import Base from '../layouts/Base.astro';
+
+const { notFound } = useTranslations(defaultLocale);
+---
+
+<Base locale={defaultLocale} title={notFound.title} description={notFound.description} noindex>
+  {
+    // Cloudflare serves the nearest 404.html for a missing URL, and this is the only one, so /de/… gets it
+    // too. It holds every language and the script below shows the one that matches the URL.
+    locales.map((locale) => {
+      const t = useTranslations(locale).notFound;
+      return (
+        <div data-locale={locale} data-title={t.title} lang={locale} hidden={locale !== defaultLocale}>
+          <SiteHeader locale={locale} />
+          <main>
+            <header class="intro">
+              <h1>{t.heading}</h1>
+              <p class="lede">
+                {t.text} <a href={getRelativeLocaleUrl(locale)}>{t.play}</a>
+                {t.or}
+                <a href={getRelativeLocaleUrl(locale, 'learn/')}>{t.learn}</a>.
+              </p>
+            </header>
+          </main>
+        </div>
+      );
+    })
+  }
+
+  <script>
+    // The variants name their language in data-locale, so the script needs no import and Astro inlines it.
+    // The default one is the variant that is not hidden.
+    const variants = [...document.querySelectorAll<HTMLElement>('[data-locale]')];
+    const variant = (locale: string | undefined) => variants.find((v) => v.dataset.locale === locale);
+
+    // A URL like /de/… names its language. English URLs have no prefix, so for those the browser's
+    // language decides, which shows a German reader who mistyped /lernen/ the German page.
+    const prefix = location.pathname.split('/')[1];
+    const preferred = navigator.languages.map((tag) => tag.split('-')[0]).find(variant);
+    const shown = variant(prefix) ?? variant(preferred) ?? variants.find((v) => !v.hidden)!;
+    for (const v of variants) v.hidden = v !== shown;
+    document.title = shown.dataset.title!;
+    document.documentElement.lang = shown.dataset.locale!;
+  </script>
+</Base>

@@ -1,0 +1,302 @@
+:root {
+  color-scheme: light dark;
+  --bg: #e6ebf3;
+  --ink: #161e38;
+  --muted: #4c5672;
+  --line: #c6cede;
+  --tint: rgb(22 30 56 / 0.06);
+  --panel: #d9e0ec;
+  /* Sunk into the panel: what shows a value rather than takes a tap, such as a target. */
+  --well: #ccd4e3;
+  --well-shadow: inset 0 1px 2px rgb(0 0 0 / 0.12), inset 0 0 0 1px var(--tint);
+  --key: #ffffff;
+  --key-ink: #6b7591;
+  --key-line: #c3cbdb;
+  --key-edge: #aeb8cc;
+  --on: #2f56e6;
+  --on-ink: #ffffff;
+  --on-edge: #1c37ad;
+  --on-glow: rgb(47 86 230 / 0.32);
+  --on-muted: #d6e0fd;
+  --on-muted-ink: #2541b8;
+  --match: #138654;
+  /* Green text on the page background; --match itself is a fill. */
+  --match-text: #0e7046;
+  --match-ink: #ffffff;
+  --match-edge: #0b6440;
+  --match-glow: color-mix(in srgb, var(--match) 40%, transparent);
+  --over: #9a3a0b;
+  --link: #2541b8;
+  --focus: #2541b8;
+  /* Handwritten notes: pencil grey, so they read as remarks on the board, not as part of it. */
+  --note: #3a456e;
+
+  --font: var(--font-atkinson);
+  --font-display: var(--font-rubik);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --gutter: 1rem;
+  --measure: 40rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1322;
+    --ink: #e6eaf5;
+    --muted: #9aa4bf;
+    --line: #273150;
+    --tint: rgb(230 234 245 / 0.06);
+    --panel: #151c31;
+    --well: #0f1527;
+    --key: #1e2643;
+    --key-ink: #8591b8;
+    --key-line: #2b3559;
+    --key-edge: #080c18;
+    --on: #87a0ff;
+    --on-ink: #0b1030;
+    --on-edge: #4c63cf;
+    --on-glow: rgb(135 160 255 / 0.42);
+    --on-muted: #26325f;
+    --on-muted-ink: #87a0ff;
+    --match: #45d39b;
+    --match-text: #45d39b;
+    --match-ink: #04291a;
+    --match-edge: #1b9a69;
+    --over: #ffa071;
+    --link: #93a9ff;
+    --focus: #93a9ff;
+    --note: #b9c2dc;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Bits and buttons draw their own pressed state; the grey tap flash on iOS would only double it. */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  /* With viewport-fit=cover, landscape phones put the notch inside the viewport; keep text clear of it. */
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+main,
+.site-header {
+  max-width: var(--measure);
+  margin-inline: auto;
+}
+
+a {
+  color: var(--link);
+  text-underline-offset: 0.15em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Components set their own display, which would otherwise win over the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+h1,
+h2 {
+  font-family: var(--font-display);
+}
+
+h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.375rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Page intro, shared by every screen. */
+
+.intro {
+  padding-block: 2.5rem 1.5rem;
+  text-align: center;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.25rem, 7vw, 3rem);
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.lede {
+  margin: 0.75rem auto 0;
+  max-width: 32rem;
+  color: var(--muted);
+  font-size: 1.125rem;
+  text-wrap: balance;
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+/* Buttons share the bits' language: a lit key with an edge underneath for the main action. */
+.button {
+  display: inline-grid;
+  place-items: center;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    scale 140ms var(--ease-out),
+    background-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease,
+    opacity 150ms ease;
+}
+
+.button.primary {
+  background: var(--on);
+  color: var(--on-ink);
+  box-shadow:
+    0 2px 0 var(--on-edge),
+    0 4px 16px var(--on-glow);
+}
+
+.button.secondary {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .button:active:not(:disabled) {
+    scale: 0.96;
+  }
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button.secondary:hover:not(:disabled) {
+    background: var(--tint);
+  }
+
+  .button.primary:hover {
+    background: color-mix(in oklab, var(--on), var(--ink) 8%);
+  }
+}
+
+/* Forced colours remove the shadows that draw a button's edge. */
+@media (forced-colors: active) {
+  .button {
+    border: 1px solid ButtonText;
+  }
+}
+
+/* No double-tap zoom on controls that are tapped quickly in a row. */
+:is(a, button, summary) {
+  touch-action: manipulation;
+}
+
+/* A row of main actions under a board: side by side, stacked at full width on a phone. They wrap on
+   the width alone, not on their labels, so they do not jump when the web font arrives. */
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.cta .button {
+  flex: 1 1 12rem;
+  max-width: 15rem;
+  min-height: 3rem;
+  font-size: 1.0625rem;
+}
+
+@media (max-width: 30rem) {
+  .cta .button {
+    max-width: none;
+  }
+}
+
+/* Keys in one track, the current one pressed: the site's two screens and the game's sizes. */
+.track {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.track a {
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--muted);
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.track a[aria-current] {
+  background: var(--key);
+  color: var(--ink);
+  box-shadow:
+    0 1px 0 var(--key-edge),
+    0 0 0 1px var(--key-line);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .track a:not([aria-current]):hover {
+    background: var(--tint);
+    color: var(--ink);
+  }
+}
+
+/* Forced colours drop the pressed key's fill, so an outline marks it instead. */
+@media (forced-colors: active) {
+  .track a[aria-current] {
+    outline: 2px solid Highlight;
+  }
+}

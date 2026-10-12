@@ -1,0 +1,353 @@
+/* Learn screen: one lesson at a time, then reference material. The board comes from board.css. */
+
+.tutorial-head {
+  padding-block: 1.5rem 0.5rem;
+}
+
+.tutorial-head h1 {
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
+}
+
+.tutorial-head .lede {
+  margin: 0.5rem 0 0;
+  font-size: 1.0625rem;
+  text-wrap: pretty;
+}
+
+/* Without JavaScript every lesson shows, one under the other, and the progress bar links to each.
+   With it, the `js` class on the root lays out one lesson at a time from the first paint, before the
+   script has loaded. */
+.progress {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* Each part is as wide as its share of the steps: four steps of counting, five of reading the grid. */
+.part:first-child {
+  flex: 4;
+}
+
+.part:last-child {
+  flex: 5;
+}
+
+.part-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 0.75rem;
+  margin: 0 0 0.4rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.part:has([aria-current]) .part-label {
+  color: var(--ink);
+}
+
+.segments-bar {
+  display: flex;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.segments-bar li {
+  flex: 1;
+}
+
+/* A tall hit area around a thin bar. */
+.segments-bar a {
+  display: block;
+  padding-block: 0.6rem;
+}
+
+.segments-bar a::before {
+  content: '';
+  display: block;
+  height: 0.375rem;
+  border-radius: 3px;
+  background: var(--line);
+  transition: background-color 200ms ease-out;
+}
+
+.segments-bar a.done::before {
+  background: var(--match);
+}
+
+.segments-bar a[aria-current]::before {
+  background: var(--on);
+}
+
+/* Forced colours drop the bars' fills: each step keeps an outline, a finished one is filled, and the
+   current one takes the system highlight. */
+@media (forced-colors: active) {
+  .segments-bar a::before {
+    border: 1px solid CanvasText;
+  }
+
+  .segments-bar a.done::before {
+    background: CanvasText;
+  }
+
+  .segments-bar a[aria-current]::before {
+    border-color: Highlight;
+    background: Highlight;
+  }
+}
+
+@media (scripting: enabled) {
+  :root:not([data-step]) .tutorial:not(.stepped) .part:first-child li:first-child a::before {
+    background: var(--on);
+  }
+}
+
+.counter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 1rem;
+  font-size: 0.875rem;
+}
+
+.counter {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* The skip link and the reset button stand on their own, so each gets a full 24px tap target. */
+.counter-row :is(.skip, .reset) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+}
+
+/* Shows once a step is finished; it clears the saved progress. */
+.counter .reset {
+  margin-inline-start: 0.75rem;
+}
+
+/* Without JavaScript every lesson shows, one under the other, as reading text. */
+@media (scripting: none) {
+  :is(.counter-row, .tutorial .stage, .tutorial .result, .step-nav button) {
+    display: none;
+  }
+
+  .step + .step {
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* Until the script takes over, only the step named in the URL shows, or the first. */
+@media (scripting: enabled) {
+  .tutorial:not(.stepped) .step,
+  [data-step] .tutorial:not(.stepped) #lesson-1 {
+    display: none;
+  }
+
+  :root:not([data-step]) .tutorial:not(.stepped) #lesson-1 {
+    display: block;
+  }
+}
+
+:is(
+  [data-step='1'] #lesson-1,
+  [data-step='2'] #lesson-2,
+  [data-step='3'] #lesson-3,
+  [data-step='4'] #lesson-4,
+  [data-step='5'] #lesson-5,
+  [data-step='6'] #lesson-6,
+  [data-step='7'] #lesson-7,
+  [data-step='8'] #lesson-8,
+  [data-step='9'] #lesson-9
+):where(.tutorial:not(.stepped) *) {
+  display: block;
+}
+
+.step {
+  padding-block: 1.25rem 0.5rem;
+}
+
+.step h2:focus,
+.step .stage:focus {
+  outline: none;
+}
+
+.step-text {
+  max-width: 36rem;
+  min-height: 3lh;
+  margin: 0 0 1.25rem;
+  text-wrap: pretty;
+}
+
+/* The lesson panel keeps one height, so Back and Next stay put from step to step. Room above and
+   beside the board is for the handwritten notes. */
+.step .stage {
+  --reserve: 30rem;
+  align-content: center;
+  min-height: 15rem;
+  padding-block: 2.75rem;
+}
+
+/* The grid lessons (from the stack lesson on) share one taller panel, so the panel grows once, when
+   the row becomes a grid, and not again from lesson to lesson. */
+@media (min-width: 40rem) {
+  .step:is([data-lesson='stack'], [data-lesson='stack'] ~ .step) .stage {
+    /* The 3 × 3 board with its targets: four cells (see --cell in board.css) plus the labels, gaps and
+       padding around them. */
+    min-height: clamp(18rem, 100svh - 22.625rem, 26rem);
+  }
+}
+
+/* Back and Next stay at the bottom edge while a lesson is taller than the screen. */
+.step-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1rem calc(-1 * var(--gutter)) 0;
+  padding: 0.75rem var(--gutter) calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  box-shadow: 0 -1px 0 var(--line);
+}
+
+/* Focused controls and scrolled-to feedback clear the sticky Back and Next at every width. */
+html {
+  scroll-padding-bottom: 8rem;
+}
+
+/* Phones: the lesson text and its board come first. */
+@media (max-width: 40rem) {
+  /* Without JavaScript all lessons show as text, and the lede introduces them. */
+  @media (scripting: enabled) {
+    .tutorial-head .lede {
+      display: none;
+    }
+  }
+
+  .step .stage {
+    padding-block: 3rem;
+  }
+
+  .step-text {
+    min-height: 4lh;
+  }
+}
+
+.step-nav [data-next],
+.handoff {
+  margin-inline-start: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .step-nav [data-next].ready {
+    animation: nudge 1.4s var(--ease-out) 2;
+  }
+}
+
+@keyframes nudge {
+  20% {
+    translate: 4px 0;
+  }
+  40% {
+    translate: 0 0;
+  }
+}
+
+.handoff {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.75rem;
+}
+
+/* On a phone the two ways into the game take a second row: keep that bar as short as it can be, so
+   the last lesson's board stays in view above it. */
+@media (max-width: 40rem) {
+  .step-nav:has(.handoff:not([hidden])) {
+    padding-top: 0.5rem;
+  }
+
+  .handoff {
+    gap: 0.5rem;
+  }
+
+  .handoff .button {
+    padding-inline: 1rem;
+  }
+}
+
+/* Reference content below the lessons */
+
+.guide {
+  margin-top: 4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.guide section {
+  margin-top: 2.5rem;
+}
+
+.guide p,
+.guide li {
+  max-width: 36rem;
+  text-wrap: pretty;
+}
+
+.guide li + li {
+  margin-top: 0.35rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.number-table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.number-table th,
+.number-table td {
+  padding: 0.35rem 1.25rem 0.35rem 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.number-table th {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.number-table .binary {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+details {
+  border-top: 1px solid var(--line);
+  padding-block: 0.75rem;
+}
+
+details:last-of-type {
+  border-bottom: 1px solid var(--line);
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+details p {
+  margin: 0.5rem 0 0;
+}

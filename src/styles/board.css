@@ -1,0 +1,424 @@
+/* The board: bits, place values and targets, shared by the game, the lessons and the home page.
+   The bit keys themselves come from bits.css. */
+
+/* The panel under the board: one surface that holds the keys, so the grid reads as one object. */
+.stage {
+  --pad: clamp(0.625rem, 3vw, 1.25rem);
+  position: relative;
+  display: grid;
+  /* Handwritten notes stay inside the panel, so a long note never makes the page scroll sideways. */
+  overflow-x: clip;
+  justify-items: center;
+  padding: var(--pad);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--tint);
+}
+
+.board {
+  /* The data attributes below set the size; 4 × 4 matches the game's default. */
+  --cols: 4;
+  --rows: 4;
+  /* Tighter gaps for bigger grids leave the bits room on a phone. */
+  --gap: calc(2rem / max(var(--cols), 3));
+  /* Place values on the left; the targets on the right and below are tiles the size of a bit. */
+  --side: 1.75rem;
+  /* Extra room between the last bit and the targets, so the keys and the targets read as two groups. */
+  --sep: calc(var(--gap) + 0.25rem);
+  /* Bits fill the panel, and stay short enough that the whole board fits on a laptop screen. The page
+     sets --reserve on the panel: the room it needs around the board. */
+  --cell: min(
+    4rem,
+    (
+        min(100vw - 2 * var(--gutter), var(--measure)) - 2 * var(--pad) - var(--side) - var(--sep) - (var(--cols) + 1) *
+          var(--gap)
+      ) /
+      (var(--cols) + 1),
+    max(2rem, (100svh - var(--reserve)) / (var(--rows) + 1) - var(--gap))
+  );
+  display: grid;
+  grid-template-columns: var(--side) repeat(var(--cols), var(--cell)) calc(var(--cell) + var(--sep));
+  grid-template-rows: auto repeat(var(--rows), var(--cell));
+  gap: var(--gap);
+  width: max-content;
+  align-items: center;
+}
+
+/* The size comes from data attributes: a style attribute in the built page would need an exception in
+   the content security policy. */
+.board[data-cols='1'] {
+  --cols: 1;
+}
+.board[data-cols='2'] {
+  --cols: 2;
+}
+.board[data-cols='3'] {
+  --cols: 3;
+}
+.board[data-cols='5'] {
+  --cols: 5;
+}
+.board[data-cols='6'] {
+  --cols: 6;
+}
+.board[data-cols='7'] {
+  --cols: 7;
+}
+.board[data-cols='8'] {
+  --cols: 8;
+}
+.board[data-rows='1'] {
+  --rows: 1;
+}
+.board[data-rows='2'] {
+  --rows: 2;
+}
+.board[data-rows='3'] {
+  --rows: 3;
+}
+.board[data-rows='5'] {
+  --rows: 5;
+}
+.board[data-rows='6'] {
+  --rows: 6;
+}
+.board[data-rows='7'] {
+  --rows: 7;
+}
+.board[data-rows='8'] {
+  --rows: 8;
+}
+
+/* Column targets: one more row of tiles under the bits. */
+.board.has-cols {
+  grid-template-rows: auto repeat(var(--rows), var(--cell)) calc(var(--cell) + var(--sep));
+}
+
+/* A lesson row has no place values down the side; they only matter once columns are numbers too. */
+.board.no-side {
+  --side: 0px;
+  grid-template-columns: repeat(var(--cols), var(--cell)) calc(var(--cell) + var(--sep));
+}
+
+.board .place {
+  padding-bottom: 0.125rem;
+}
+
+.board .place.side {
+  padding: 0 0.375rem 0 0;
+  text-align: end;
+}
+
+/* A target is a tile the size of a bit, with the running sum under the number. It is not a key:
+   it sits sunk into the panel like a display, and turns solid green once its line matches. */
+.sum {
+  position: relative;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: calc(var(--cell) * 0.04);
+  width: var(--cell);
+  aspect-ratio: 1;
+  border-radius: 20%;
+  background: var(--well);
+  box-shadow: var(--well-shadow);
+  line-height: 1;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.sum.row {
+  justify-self: end;
+}
+
+.sum.col {
+  align-self: end;
+}
+
+.target {
+  font-size: max(0.6875rem, var(--cell) * 0.32);
+  font-weight: 700;
+}
+
+.current {
+  font-size: max(0.5625rem, var(--cell) * 0.19);
+  color: var(--muted);
+}
+
+.sum.over .current {
+  color: var(--over);
+}
+
+.sum.match {
+  background: var(--match);
+  color: var(--match-ink);
+  box-shadow:
+    0 2px 0 var(--match-edge),
+    0 0 calc(var(--cell) * 0.25) var(--match-glow);
+}
+
+/* A tick replaces the sum, so a match does not rely on colour alone. */
+.sum.match .current {
+  font-size: 0;
+}
+
+.sum.match .current::before {
+  content: '';
+  display: block;
+  width: max(0.25rem, var(--cell) * 0.08);
+  height: max(0.5rem, var(--cell) * 0.16);
+  margin-bottom: 0.1em;
+  border: solid var(--match-ink);
+  border-width: 0 2px 2px 0;
+  rotate: 45deg;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sum.match {
+    animation: pop 260ms var(--ease-out);
+  }
+
+  /* On a win the wave runs on into the targets: they confirm one after another, rows then columns. */
+  .solved .sum.match {
+    animation: pop 320ms var(--ease-out) var(--d) both;
+  }
+}
+
+@keyframes pop {
+  40% {
+    scale: 1.1;
+  }
+}
+
+/* Solved: every lit bit turns the match colour, in one wave from the top-left corner. */
+.solved .bit[aria-pressed='true'] {
+  background-color: var(--match);
+  color: var(--match-ink);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    0 2px 0 var(--match-edge),
+    0 0 0 1px var(--match-edge),
+    0 0 calc(var(--cell) * 0.3) var(--match-glow);
+  transition-delay: var(--d);
+  transition-duration: 200ms;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .solved .bit[aria-pressed='true'] {
+    animation: ripple 420ms var(--ease-out) var(--d) both;
+  }
+}
+
+@keyframes ripple {
+  40% {
+    scale: 1.08;
+  }
+}
+
+/* The sum spelled out under a lesson row: each bit's value under it, the total under the target. */
+.addend,
+.total {
+  position: relative;
+  justify-self: center;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  transition:
+    color 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.addend {
+  min-width: 1.75em;
+  padding: 0.1em 0.35em;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.addend.lit {
+  background: var(--on-muted);
+  color: var(--on-muted-ink);
+  font-weight: 700;
+}
+
+/* A plus sign in the gap before every addend but the first. */
+.addend + .addend::before {
+  content: '+';
+  position: absolute;
+  inset-inline-start: calc(-0.5 * (var(--cell) - 100% + var(--gap)) - 0.3em);
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.total {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.total.match {
+  color: var(--match-text);
+}
+
+/* Parts a lesson brings in one at a time keep their place, so nothing moves when they appear. */
+.pending {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .arrive {
+    animation: arrive 320ms var(--ease-out);
+  }
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+}
+
+/* The row and the column of the bit just switched, so both of its targets are easy to compare. */
+/* Quiet: a faint tint and a thin pencil outline. A focus ring on the switched bit wins over it. */
+.bit.cross:not(:focus-visible) {
+  outline: 1.5px solid color-mix(in oklab, var(--note) 60%, transparent);
+  outline-offset: 2px;
+}
+
+.bit.cross:not([aria-pressed='true']) {
+  background-color: color-mix(in oklab, var(--key), var(--on) 10%);
+}
+
+/* Pencil, not orange: orange means "over the target" elsewhere. */
+.sum.cross:not(.match) {
+  box-shadow: inset 0 0 0 2px var(--note);
+}
+
+/* The bit to start with, while a lesson points at it. */
+.bit.hint:not([aria-pressed='true']) {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 2px 0 var(--key-edge),
+    0 0 0 2px var(--on);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bit.hint:not([aria-pressed='true']) {
+    animation: beckon 1.6s ease-in-out 3;
+  }
+}
+
+@keyframes beckon {
+  50% {
+    scale: 1.06;
+  }
+}
+
+/* A column turning into a row: a copy of its bits lifts off the board and turns a quarter. */
+.bit.lifted {
+  opacity: 0.35;
+}
+
+.spin {
+  position: absolute;
+  inset: 0 auto auto 0;
+  z-index: 1;
+  display: flex;
+  align-items: start;
+  pointer-events: none;
+  transition: opacity 250ms ease-out;
+}
+
+.spin.leaving {
+  opacity: 0;
+}
+
+/* Back on the board (`landed`), the floating shadow settles into the key's own one. */
+.spin.landed .bit {
+  transition: box-shadow 200ms ease-out;
+}
+
+.spin-item {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+}
+
+.spin:not(.landed) .bit {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    0 6px 18px rgb(0 0 0 / 0.18),
+    0 0 0 1px var(--key-line);
+}
+
+.spin:not(.landed) .bit[aria-pressed='true'] {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    0 6px 18px var(--on-glow),
+    0 0 0 1px var(--on-edge);
+}
+
+.spin-sum {
+  align-self: center;
+  margin-top: -1.3rem;
+  padding-inline-start: 0.25rem;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.spin-sum.shown {
+  opacity: 1;
+}
+
+/* The verdict under a lesson board and the button that goes on. One line of room is kept, so they
+   appear without pushing the page down. */
+.result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0 1rem;
+  min-height: 2.75rem;
+  margin-top: 0.5rem;
+}
+
+.feedback {
+  margin: 0;
+  color: var(--match-text);
+  font-weight: 700;
+}
+
+/* A step on the way, not a success. */
+.feedback.hint {
+  color: var(--ink);
+}
+
+/* "Show again" while the animation it starts is still running. */
+.result .link-button[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.result .link-button {
+  min-height: 2.75rem;
+  font-weight: 700;
+}
+
+/* Forced colors drop box shadows: the targets keep an edge, and the crossing lines and the hinted
+   bit get a dashed outline. */
+@media (forced-colors: active) {
+  .sum {
+    border: 2px solid CanvasText;
+  }
+
+  .sum.cross,
+  .bit.hint {
+    outline: 2px dashed Highlight;
+  }
+}

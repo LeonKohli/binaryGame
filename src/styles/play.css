@@ -1,0 +1,208 @@
+/* Play screen: the board alone in the middle of the screen, the size picker and timer above it, the
+   best time or the verdict and the actions below it. The game fills the screen under the header. */
+.play {
+  /* The header, the picker row, the line under the board and the buttons. */
+  --reserve: 20rem;
+  --cap: 4.5rem;
+  /* Without a panel, targets sit on the page: they take the surface of the size picker's track. */
+  --well: var(--panel);
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100svh - 4.625rem);
+  padding-block: 0.5rem 1.5rem;
+}
+
+.game {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+/* The board, the line under it and the buttons sit together in the middle of what the screen has
+   left; the picker and the timer stay at the top, so they never move under the pointer. */
+.field {
+  /* The column's width, and on a phone the screen's. */
+  --room: min(100vw - 2 * var(--gutter), var(--measure));
+  display: grid;
+  place-items: center;
+  margin-top: auto;
+  padding-block: 1.5rem 1rem;
+}
+
+/* The place values get a column as wide as the targets', so the bits sit in the middle of the
+   screen. Where that would shrink the bits below a 2.75rem tap target, the room goes to the bits
+   and the column shrinks back to the labels' width. */
+.play .board {
+  --cell: min(
+    var(--cap),
+    (var(--room) - var(--side) - var(--sep) - (var(--cols) + 1) * var(--gap)) / (var(--cols) + 1),
+    max(2.75rem, (var(--room) - 2 * var(--sep) - (var(--cols) + 1) * var(--gap)) / (var(--cols) + 2)),
+    max(2rem, (100svh - var(--reserve)) / (var(--rows) + 1) - var(--gap))
+  );
+  grid-template-columns:
+    minmax(var(--side), calc(var(--cell) + var(--sep)))
+    repeat(var(--cols), var(--cell))
+    calc(var(--cell) + var(--sep));
+  width: auto;
+  max-width: 100%;
+}
+
+/* On a phone the board runs from gutter to gutter, the same edges as the picker and the timer above
+   it, and every bit of width goes to the bits. */
+@media (max-width: 30rem) {
+  .play .board {
+    --cell: min(
+      var(--cap),
+      (var(--room) - var(--side) - var(--sep) - (var(--cols) + 1) * var(--gap)) / (var(--cols) + 1),
+      max(2rem, (100svh - var(--reserve)) / (var(--rows) + 1) - var(--gap))
+    );
+  }
+}
+
+/* On the narrowest screens the timer wraps under the size picker instead of running off the edge. */
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.sizes {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sizes-label {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* The same height as the header's keys. */
+.sizes a {
+  min-width: clamp(2.125rem, 10vw, 2.5rem);
+  min-height: 2.75rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Narrower, the picker, its label and the timer no longer fit one row. The nav keeps its name from
+   its aria-label. */
+@media (max-width: 24rem) {
+  .sizes-label {
+    display: none;
+  }
+}
+
+/* The clock waits in grey and turns to ink once the first bit starts it; a win turns it green. */
+.clock {
+  margin: 0;
+  margin-inline-start: auto;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 5vw, 1.875rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  /* Fixed-width digits keep the running timer from jittering. */
+  font-variant-numeric: tabular-nums;
+  transition: color 150ms ease;
+}
+
+.running .clock {
+  color: var(--ink);
+}
+
+.solved .clock {
+  color: var(--match-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .solved .clock {
+    animation: pop 320ms var(--ease-out) var(--wave) both;
+  }
+
+  /* A new board deals its bits in, in the same diagonal order as the win wave but three times faster. */
+  .board.fresh :is(.bit, .sum) {
+    animation: deal 280ms var(--ease-out) calc(var(--d) / 3) backwards;
+  }
+}
+
+@keyframes deal {
+  from {
+    opacity: 0;
+    scale: 0.9;
+  }
+}
+
+/* Revealed: flat and pale, so the shown answer never looks like one the player solved. The targets
+   keep their tick, without the green. */
+.revealed .bit[aria-pressed='true'] {
+  background-color: var(--on-muted);
+  background-image: none;
+  color: var(--on-muted-ink);
+  box-shadow: 0 0 0 1px var(--on-muted-ink);
+}
+
+.revealed .sum.match {
+  background: var(--well);
+  color: inherit;
+  box-shadow: var(--well-shadow);
+  animation: none;
+}
+
+.revealed .sum.match .current::before {
+  border-color: var(--muted);
+}
+
+/* The best time and the verdict take turns in one line, two lines high, so the buttons stay put. */
+.message {
+  display: grid;
+  min-height: 2lh;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.message > * {
+  grid-area: 1 / 1;
+  align-self: center;
+  margin: 0;
+  color: var(--muted);
+}
+
+.status:not(:empty) + .best {
+  visibility: hidden;
+}
+
+.best {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.solved .status {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* The verdict lands after the wave, not on top of it. */
+@media (prefers-reduced-motion: no-preference) {
+  .solved .status {
+    animation: rise 240ms var(--ease-out) var(--wave) backwards;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+.actions {
+  margin-block: 0.5rem auto;
+}

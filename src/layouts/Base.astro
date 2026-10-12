@@ -1,0 +1,91 @@
+---
+import { Font } from 'astro:assets';
+import { getAbsoluteLocaleUrl } from 'astro:i18n';
+import { defaultLocale, type Locale, locales, useTranslations } from '../i18n';
+import { dark, light } from '../theme';
+import '../styles/global.css';
+
+interface Props {
+  locale: Locale;
+  /** Path of the page below its locale, the same in every language (`''` or `'learn/'`); omit when the page has no translations. */
+  path?: string;
+  title: string;
+  description: string;
+  /** Title for link previews; defaults to `title`. */
+  shareTitle?: string;
+  /** schema.org nodes, combined into one `@graph`. */
+  jsonLd?: object[];
+  /** Keeps the page out of search results, e.g. the 404 page. */
+  noindex?: boolean;
+  /** Loads the handwriting font, for pages with notes drawn over a board. */
+  handwriting?: boolean;
+}
+
+const {
+  locale,
+  path,
+  title,
+  description,
+  shareTitle = title,
+  jsonLd = [],
+  noindex = false,
+  handwriting = false,
+} = Astro.props;
+const { site } = useTranslations(locale);
+const url = new URL(Astro.url.pathname, Astro.site).href;
+const others = locales.filter((other) => other !== locale);
+// `<` would let a string close the script element early.
+const graph = JSON.stringify({ '@context': 'https://schema.org', '@graph': jsonLd }).replaceAll('<', '\\u003c');
+---
+
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    {/* Head content of one page, such as a script that must run before the first paint. */}
+    <slot name="head" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {!noindex && <link rel="canonical" href={url} />}
+    {!noindex && path !== undefined && (
+      <>
+        {locales.map((l) => (
+          <link rel="alternate" hreflang={l} href={getAbsoluteLocaleUrl(l, path)} />
+        ))}
+        <link rel="alternate" hreflang="x-default" href={getAbsoluteLocaleUrl(defaultLocale, path)} />
+      </>
+    )}
+    <meta name="robots" content={noindex ? 'noindex' : 'max-image-preview:large'} />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <Font cssVariable="--font-atkinson" preload={[{ subset: 'latin' }]} />
+    <Font cssVariable="--font-rubik" preload={[{ subset: 'latin' }]} />
+    {handwriting && <Font cssVariable="--font-caveat" preload={[{ subset: 'latin' }]} />}
+    {/* Tells the browser the page has its own dark theme, so a forced dark mode leaves it alone. */}
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content={light.bg} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={dark.bg} media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Binary Game" />
+    <meta property="og:locale" content={site.ogLocale} />
+    {others.map((l) => (
+      <meta property="og:locale:alternate" content={useTranslations(l).site.ogLocale} />
+    ))}
+    {!noindex && <meta property="og:url" content={url} />}
+    <meta property="og:title" content={shareTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL('og.png', getAbsoluteLocaleUrl(locale)).href} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={site.imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image:alt" content={site.imageAlt} />
+    {/* eslint-disable-next-line astro/no-set-html-directive -- JSON from props, with `<` escaped above */}
+    {jsonLd.length > 0 && <script type="application/ld+json" set:html={graph} />}
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

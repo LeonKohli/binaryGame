@@ -1,0 +1,195 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { type Locale, locales, useTranslations } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  /** Path of the current page below its locale, so the language link keeps the reader on the same page. */
+  path?: string;
+}
+
+const { locale, path } = Astro.props;
+const { nav, source } = useTranslations(locale).site;
+const links = [
+  { path: 'play/', label: nav.play },
+  { path: 'learn/', label: nav.learn },
+];
+const languages = locales.filter((other) => other !== locale);
+---
+
+<header class="site-header">
+  <a class="brand" href={getRelativeLocaleUrl(locale)}>
+    <span class="brand-mark" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </span>
+    <span class="brand-name">Binary Game</span>
+  </a>
+  <nav aria-label={nav.label}>
+    <div class="track pages">
+      {links.map((link) => (
+        <a
+          href={getRelativeLocaleUrl(locale, link.path)}
+          aria-current={path === link.path ? 'page' : path?.startsWith(link.path) ? 'true' : undefined}
+        >
+          {link.label}
+        </a>
+      ))}
+    </div>
+    {
+      // Each language is named in itself, so readers find theirs without knowing the current one.
+      // Narrow screens show its code next to the visually hidden name, so the link's name holds both.
+      languages.map((other) => (
+        <a class="language" href={getRelativeLocaleUrl(other, path ?? '')} hreflang={other} lang={other}>
+          <span class="language-name">{useTranslations(other).site.languageName}</span>
+          <span class="language-code">{other.toUpperCase()}</span>
+        </a>
+      ))
+    }
+    <a class="source" href="https://github.com/LeonKohli/binaryGame" aria-label={source}>
+      {/* The GitHub mark from Octicons (MIT): https://primer.style/octicons/icon/mark-github-16 */}
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"
+        ></path>
+      </svg>
+    </a>
+  </nav>
+</header>
+
+<style>
+  /* Site header: the brand, the two screens as keys in one track (like the size picker on the play
+     screen), and the language as plain text, so it never reads as a third screen. One row at every width. */
+
+  .site-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-block: 0.75rem;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2.75rem;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  /* Four keys, two of them lit: the favicon drawn in the page's own colours. */
+  .brand-mark {
+    display: grid;
+    grid-template-columns: repeat(2, 0.625rem);
+    gap: 0.1875rem;
+  }
+
+  .brand-mark span {
+    aspect-ratio: 1;
+    border-radius: 0.1875rem;
+    background: var(--key-line);
+  }
+
+  .brand-mark span:nth-child(3n + 1) {
+    background: var(--on);
+    box-shadow: 0 0 8px var(--on-glow);
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-inline-start: auto;
+  }
+
+  /* Every link is bold, so nothing shifts when the current screen changes. */
+  nav a {
+    display: grid;
+    place-items: center;
+    min-height: 2.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .pages a {
+    padding-inline: clamp(0.7rem, 3vw, 1rem);
+  }
+
+  /* The padding gives a full tap target. */
+  nav .language {
+    padding-inline: 0.5rem;
+    color: var(--muted);
+    font-weight: 400;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color 150ms ease;
+  }
+
+  .language-code {
+    display: none;
+  }
+
+  /* A tap target the size of the keys; the negative margin lines the mark up with the column edge. */
+  nav .source {
+    width: 2.75rem;
+    margin-inline-end: -0.75rem;
+    color: var(--muted);
+  }
+
+  .source svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  /* Narrow screens keep one row: the brand shrinks to its mark and the language to its code. The full
+     names stay in the accessibility tree. */
+  @media (max-width: 30rem) {
+    .brand-name,
+    .language-name {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .brand {
+      min-width: 2.75rem;
+    }
+
+    /* The language link and the GitHub mark bring their own padding, so on the narrowest German
+       screens the header still fits on one row. */
+    .site-header {
+      gap: 0.5rem;
+    }
+
+    nav {
+      gap: 0;
+    }
+
+    .language-code {
+      display: inline;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    nav .language:hover {
+      color: var(--ink);
+      text-decoration-color: currentColor;
+    }
+
+    nav .source:hover {
+      color: var(--ink);
+    }
+  }
+</style>

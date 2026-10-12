@@ -1,51 +1,45 @@
-# 🌟 Binary Game
+# Binary Game
 
-Welcome to the Binary Game 🎮, an innovative and educational web-based game designed to teach and challenge players in the concepts of binary numbers. Dive into a world where decimal meets binary in a fun and interactive way!
+A browser puzzle for practicing decimal to binary conversion. Switch bits on until every row and column of the grid adds up to its decimal target.
 
-## 🚀 Features
+Play it at [binary.leonkohli.dev](https://binary.leonkohli.dev), in English or German.
 
-- **👆 Interactive Gameplay:** Engage with a dynamic grid-based interface to flip binary digits (0s and 1s).
-- **🧠 Multiple Difficulty Levels:** Choose from various grid sizes for a tailored challenge.
-- **💡 Instant Feedback:** Visual cues provide immediate guidance and understanding of binary conversions.
-- **🎨 Adaptive Design:** A sleek, responsive design ensures an immersive experience on all devices.
-- **✨ Glassmorphism UI:** Experience the latest UI trend with a frosted-glass-like backdrop.
+## What it has
 
-## 🎲 How to Play
+- A short tutorial that goes from one bit to a whole grid, plus a 0–15 table and answers to common questions.
+- Grids from 3 bits (0–7) to 8 bits (0–255), with your best time for each size.
+- A daily puzzle that is the same for every player, with a streak you can share.
+- Keyboard play: the arrow keys move between bits, and Space switches one.
 
-1. **🔢 Choose Grid Size:** Select a grid size to set your challenge. Each grid size corresponds to binary digit complexity.
-2. **🖱️ Toggle Cells:** Click cells to toggle between 0 and 1, crafting your binary masterpiece.
-3. **✔️ Match Row and Column Sums:** Align your binary digits to match the given decimal sums for each row and column.
-4. **🏆 Victory Check:** Correctly match all sums to win!
-5. **🆘 Need Help?:** Stuck? Hit the 'Give Up' button to unveil the solution and learn.
+It needs no account, shows no ads, and loads nothing from other sites. Best times and the streak stay in your browser.
 
-## 🛠️ Technologies Used
+## Run it locally
 
-- **HTML5**: 🏗️ For structuring the gameplay.
-- **CSS3 & TailwindCSS**: 🎨 For stylish animations and responsive flair.
-- **JavaScript**: ⚙️ For responsive and engaging game logic.
+The site is a static [Astro](https://astro.build) site. You need [Bun](https://bun.sh).
 
-## 🚀 Setup and Launch
+```sh
+bun install
+bun run dev      # http://localhost:4321
+```
 
-Get the game running in no time:
+Before you open a pull request, run the checks:
 
-1. 📥 Clone the repository to your machine.
-2. 🌐 Open `index.html` in a modern browser.
-3. 🎉 Start playing and enjoy!
+```sh
+bun run check    # type-check, lint and check formatting
+bun run test     # unit tests
+bun run build    # build the static site to dist/
+```
 
-## 🤝 Contributions
+`bun run fix` applies lint fixes and formats the code. The rules for copy and translations are in [Languages and copy](src/i18n/README.md).
 
-Got ideas? 🌟 Contributions, issues, and feature requests are always welcome.
+## Deployment
 
-## 📜 License
+Pushing to `main` deploys the site to Cloudflare Workers through Workers Builds. `wrangler.jsonc` serves `dist/` as static files on `binary.leonkohli.dev`.
 
-This project is open source and available under the [MIT License](LICENSE).
+## Feedback
 
-## 🙏 Acknowledgments
+Found a bug or have an idea? [Open an issue](https://github.com/LeonKohli/binaryGame/issues).
 
-- 🎩 Hat tip to anyone whose code was used.
-- 💡 Inspiration.
-- 🌟 Community support.
+## License
 
----
-
-💖 Enjoy the Binary Game - where learning meets fun!
+[MIT](LICENSE)

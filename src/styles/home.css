@@ -1,0 +1,81 @@
+/* Home screen: what the game is, one row to try, the way in, and a look at the grid. */
+
+.hero {
+  padding-block: clamp(2rem, 7vw, 3.5rem) 1.75rem;
+  text-align: center;
+}
+
+/* Narrow enough to take two lines in Rubik and in its fallback alike, so the heading does not rewrap
+   when the font arrives. */
+.hero h1 {
+  max-width: 9.5em;
+  margin-inline: auto;
+  font-size: clamp(2.5rem, 9vw, 3.75rem);
+  text-wrap: balance;
+}
+
+.hero .lede {
+  max-width: 27rem;
+}
+
+/* The demo panel leaves room around the row for the handwritten notes. */
+.demo .stage {
+  --reserve: 26rem;
+  /* Each side holds one line of handwriting, its gap to the board and the panel's inset. */
+  padding: 3.75rem var(--pad);
+}
+
+@media (max-width: 40rem) {
+  .demo .stage {
+    padding-block: 3rem;
+  }
+}
+
+.home .cta {
+  margin-top: 0.75rem;
+}
+
+/* The grid preview: text beside the board on wide screens, above it on phones. */
+.then {
+  /* Room above the board for the note on the rows. */
+  --top: 2rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: center;
+  margin-top: 4.5rem;
+}
+
+.then-text p {
+  margin: 0;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* The same panel as the demo, with a narrow inset so the 3 × 3 board keeps its size on a phone. */
+.then .stage {
+  padding: var(--top) 0.75rem 2.75rem;
+}
+
+.then .board {
+  --cell: 2.75rem;
+}
+
+/* Side by side, the heading lines up with the board's first row: the panel's top padding, the place
+   values and the gap under them. */
+@media (min-width: 40rem) {
+  .then {
+    grid-template-columns: 13rem 1fr;
+    align-items: start;
+  }
+
+  .then-text {
+    padding-top: calc(var(--top) + 1.625rem);
+  }
+}
+
+.facts {
+  margin: 3rem 0 0;
+  color: var(--muted);
+  text-align: center;
+}

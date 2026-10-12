@@ -1,0 +1,104 @@
+/* Bit keys and place-value labels, shared by the game, the lessons and the home page.
+   A bit takes its size from --cell, which the page sets on an ancestor. */
+
+.place {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A bit is a small key: a raised edge underneath, pressed down while held. Off, its 0 recedes;
+   on, it lights up and glows, so the 1s read as the number at a glance. */
+.bit {
+  display: grid;
+  place-items: center;
+  width: var(--cell);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 20%;
+  background-color: var(--key);
+  color: var(--key-ink);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 2px 0 var(--key-edge),
+    0 0 0 1px var(--key-line);
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: calc(var(--cell) * 0.36);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Switching off fades out; switching on (below) is near instant, like a lamp. */
+  transition:
+    translate 90ms ease-out,
+    background-color 240ms ease-out,
+    color 240ms ease-out,
+    box-shadow 240ms ease-out,
+    opacity 200ms ease-out;
+}
+
+.bit[aria-pressed='true'] {
+  background-color: var(--on);
+  background-image: linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 55%);
+  color: var(--on-ink);
+  font-size: calc(var(--cell) * 0.4);
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    0 2px 0 var(--on-edge),
+    0 0 0 1px var(--on-edge),
+    0 0 calc(var(--cell) * 0.3) var(--on-glow);
+  transition-duration: 90ms, 60ms, 60ms, 60ms, 200ms;
+}
+
+/* The ring sits on the key itself: on a big grid the gaps are narrower than an offset ring. */
+.bit:focus-visible {
+  outline-offset: 1px;
+}
+
+.bit[aria-disabled='true'] {
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bit:hover:not([aria-pressed='true'], [aria-disabled='true']) {
+    background-color: color-mix(in oklab, var(--key), var(--on) 12%);
+    color: var(--muted);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bit:active:not([aria-disabled='true']) {
+    translate: 0 2px;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.05),
+      0 0 0 1px var(--key-line);
+  }
+
+  .bit[aria-pressed='true']:active:not([aria-disabled='true']) {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.3),
+      0 0 0 1px var(--on-edge),
+      0 0 calc(var(--cell) * 0.3) var(--on-glow);
+  }
+}
+
+/* Forced colours drop the key's fill and shadows: a border keeps its shape, and the system highlight
+   marks a bit that is on. */
+@media (forced-colors: active) {
+  .bit {
+    border: 1px solid ButtonText;
+  }
+
+  .bit[aria-pressed='true'] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+}

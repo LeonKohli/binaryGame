@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // Warnings fail too (denyWarnings), so `warn` and `error` below mean the same.
+  "options": {
+    "typeAware": true,
+    "denyWarnings": true,
+    "reportUnusedDisableDirectives": "error"
+  },
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "rules": {
+    "eqeqeq": "error",
+    "no-else-return": "error",
+    "max-statements": ["error", 40],
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-import-type-side-effects": "error",
+    "typescript/prefer-optional-chain": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "typescript/no-deprecated": "error",
+    "typescript/no-unnecessary-condition": "error",
+    "typescript/prefer-nullish-coalescing": "error",
+    // Its fix, Object.assign, writes into the mapped items. Here they are shared module data (translations,
+    // starting grids), so the spread copies are what keeps that data intact.
+    "oxc/no-map-spread": "off",
+    // Astro bundles a stylesheet that a component or page imports for its side effect.
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }]
+  },
+  "overrides": [
+    {
+      // Bundled for the browser by Vite; build-time work belongs in frontmatter or src/pages.
+      "files": ["src/scripts/**"],
+      "rules": { "import/no-nodejs-modules": "error" }
+    }
+  ]
+}

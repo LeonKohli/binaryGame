@@ -1,0 +1,84 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import Board from '../../components/Board.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { localePaths, useTranslations } from '../../i18n';
+import Base from '../../layouts/Base.astro';
+import { DAILY_SIZE } from '../../scripts/daily';
+import { DEFAULT_SIZE, playPath } from '../../scripts/sizes';
+import { blankGrid } from '../../scripts/starts';
+import '../../styles/play.css';
+
+export const getStaticPaths = localePaths;
+
+const { locale } = Astro.props;
+const { daily: t, play } = useTranslations(locale);
+---
+
+<Base locale={locale} path="daily/" title={t.title} description={t.description}>
+  <SiteHeader locale={locale} path="daily/" />
+  <main class="play">
+    <h1 class="visually-hidden">{t.heading}</h1>
+
+    {/* Today is the reader's own calendar day, so the page is built blank and the script deals it. */}
+    <section class="game" data-game data-size={DAILY_SIZE} aria-label={t.heading}>
+      <div class="hud">
+        <p class="day">
+          <span data-number>{t.label}</span>
+          <span class="streak" data-streak></span>
+        </p>
+        <p class="clock" data-timer>
+          0:00
+        </p>
+      </div>
+
+      <div class="field">
+        <Board locale={locale} spec={blankGrid(DAILY_SIZE)} aria-describedby="rules" />
+      </div>
+      <p class="visually-hidden" id="rules">
+        {t.lede}
+      </p>
+      <noscript>
+        <p class="status">{play.noscript}</p>
+      </noscript>
+
+      <div class="message">
+        <p class="status" data-status role="status"></p>
+      </div>
+      <p class="visually-hidden" data-progress role="status"></p>
+      <div class="cta actions">
+        <button type="button" class="button primary" data-share hidden>
+          {t.share}
+        </button>
+        <a class="button secondary" href={getRelativeLocaleUrl(locale, playPath(DEFAULT_SIZE))}>
+          {t.more}
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    /* Two lines from the start, so the streak appearing after a solve does not move the board. */
+    .day {
+      display: grid;
+      grid-template-rows: auto 1lh;
+      margin: 0;
+      font-family: var(--font-display);
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .streak {
+      color: var(--muted);
+      font-size: 0.875rem;
+      font-weight: 400;
+    }
+  </style>
+
+  <script>
+    import { dailyText, pageLocale } from '../../i18n';
+    import { mountDaily } from '../../scripts/daily-game';
+
+    mountDaily(document.querySelector<HTMLElement>('[data-game]')!, dailyText[pageLocale()]);
+  </script>
+</Base>

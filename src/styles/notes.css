@@ -1,0 +1,166 @@
+/* Handwritten notes with sketched arrows over a board, from src/components/Note.astro. They are
+   decoration: everything they say is also in the text or the labels around the board. CSS anchor
+   positioning puts each note and its arrow next to the part of the board it explains. */
+
+/* Each panel holds one board, so the same anchor names on another board of the page do not clash. */
+.stage {
+  anchor-scope: all;
+}
+
+/* The parts of a board a note can point at; Note.astro lists the same names. */
+.board .bit[data-r='0'][data-c='0'] {
+  anchor-name: --first-bit;
+}
+.board :nth-child(1 of .place.side) {
+  anchor-name: --side-place;
+}
+.board :nth-child(1 of .sum.row) {
+  anchor-name: --row-target;
+}
+.board :nth-child(2 of .sum.row) .current {
+  anchor-name: --row-2-sum;
+}
+.board :nth-child(2 of .sum.col) {
+  anchor-name: --col-2-target;
+}
+.board :nth-child(3 of .sum.col) {
+  anchor-name: --col-3-target;
+}
+.board .total {
+  anchor-name: --total;
+}
+
+[data-to='first-bit'] {
+  --anchor: --first-bit;
+}
+[data-to='side-place'] {
+  --anchor: --side-place;
+}
+[data-to='row-target'] {
+  --anchor: --row-target;
+}
+[data-to='row-2-sum'] {
+  --anchor: --row-2-sum;
+}
+[data-to='col-2-target'] {
+  --anchor: --col-2-target;
+}
+[data-to='col-3-target'] {
+  --anchor: --col-3-target;
+}
+[data-to='total'] {
+  --anchor: --total;
+}
+
+/* Each side: where the note and its arrow sit, which way the arrow turns, and the margins. The note
+   keeps clear of the panel's rounded edge and leaves room for the arrow toward its target. Above or
+   below, the arrow comes down at the start of its target, clear of a label centred over it. */
+[data-side='top'] {
+  --area: top;
+  --arrow-area: top span-right;
+  --turn: 0deg;
+  --margin: 0.5rem 0.5rem 36px;
+}
+[data-side='bottom'] {
+  --area: bottom;
+  --arrow-area: bottom span-right;
+  --turn: 180deg;
+  --margin: 36px 0.5rem 0.5rem;
+}
+[data-side='left'] {
+  --area: left;
+  --arrow-area: left;
+  --turn: -90deg;
+  --margin: 0.5rem 36px 0.5rem 0.5rem;
+}
+[data-side='right'] {
+  --area: right;
+  --arrow-area: right;
+  --turn: 90deg;
+  --margin: 0.5rem 0.5rem 0.5rem 36px;
+}
+
+/* On a phone the board fills the panel's width, so a note beside it moves above. */
+@media (width < 40rem) {
+  [data-narrow='top'] {
+    --area: top;
+    --arrow-area: top span-right;
+    --turn: 0deg;
+    --margin: 0.5rem 0.5rem 36px;
+  }
+}
+
+.note-group {
+  display: contents;
+}
+
+.note,
+.note-arrow {
+  position: absolute;
+  position-anchor: var(--anchor);
+  z-index: 2;
+  color: var(--note);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Centred on its target where the panel has room, moved inside the panel where not. A long note, as
+   in German, wraps to two balanced lines. */
+.note {
+  position-area: var(--area);
+  max-width: 12.5rem;
+  margin: var(--margin);
+  font-family: var(--font-caveat);
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.05;
+  text-wrap: balance;
+  rotate: -3deg;
+}
+
+/* Note.astro draws the arrow pointing down; it turns toward the target from the note's side. */
+.note-arrow {
+  position-area: var(--arrow-area);
+  rotate: var(--turn);
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The note fades in, then its arrow draws itself: pathLength="1" makes one dash the whole stroke. */
+@media (prefers-reduced-motion: no-preference) {
+  .note {
+    animation: note-in 300ms var(--ease-out) both;
+  }
+
+  .note-arrow path {
+    stroke-dasharray: 1;
+    animation: draw 380ms ease-out 150ms both;
+  }
+
+  .note-arrow .head {
+    animation-delay: 450ms;
+  }
+}
+
+@keyframes note-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+/* Without anchor positioning a note cannot find its target, so it is left out. */
+@supports not (anchor-name: --a) {
+  .note-group {
+    display: none;
+  }
+}

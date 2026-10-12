@@ -1,0 +1,60 @@
+---
+import rough from 'roughjs';
+import '../styles/notes.css';
+
+// A handwritten note with a sketched arrow, placed next to a part of the board by CSS anchor
+// positioning (src/styles/notes.css). The arrow is drawn here, at build time, pointing down;
+// notes.css turns it toward the target.
+
+type Side = 'top' | 'right' | 'bottom' | 'left';
+type Anchor = 'first-bit' | 'side-place' | 'row-target' | 'row-2-sum' | 'col-2-target' | 'col-3-target' | 'total';
+
+export interface Props {
+  /** What the arrow points at; notes.css names these parts of the board. */
+  to: Anchor;
+  /** Which side of it the note sits on. */
+  side: Side;
+  /** The side on a phone, where the board leaves no room beside it. */
+  narrow?: Side;
+  /** The key lessons.ts finds the note by, to show or hide it. */
+  name?: string;
+  hidden?: boolean;
+  /** Varies the sketch, so two arrows on one board do not look alike. */
+  seed?: number;
+}
+
+const { to, side, narrow, name, hidden, seed = 3 } = Astro.props;
+
+// A bowed stroke from the top of a 36 × 36 box down to its tip, and the two strokes of the head.
+const [ex, ey] = [14, 34];
+const head = (a: number) => `${ex + 7 * Math.cos(a)},${ey + 7 * Math.sin(a)}`;
+const angle = Math.atan2(ey - 26, ex - 4);
+const generator = rough.generator();
+const options = { strokeWidth: 1.8, roughness: 0.9, bowing: 1.2, disableMultiStroke: true, seed };
+const paths = [
+  generator.path(`M10,6 Q4,26 ${ex},${ey}`, options),
+  generator.path(`M${head(angle + Math.PI * 0.8)} L${ex},${ey} L${head(angle - Math.PI * 0.8)}`, {
+    ...options,
+    seed: seed + 50,
+  }),
+].flatMap((drawable) => generator.toPaths(drawable).map((info) => info.d));
+---
+
+<span
+  class="note-group"
+  data-note={name}
+  data-to={to}
+  data-side={side}
+  data-narrow={narrow}
+  hidden={hidden}
+  aria-hidden="true"
+>
+  <span class="note">
+    <slot />
+  </span>
+  <svg class="note-arrow" width="36" height="36" viewBox="0 0 36 36">
+    {paths.map((d, i) => (
+      <path d={d} pathLength="1" class:list={{ head: i > 0 }} />
+    ))}
+  </svg>
+</span>
