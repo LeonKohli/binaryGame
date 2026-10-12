@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "binary-game",
+  "name": "binarygame",
   "compatibility_date": "2026-10-12",
   // Every page is prerendered, so the Worker only serves the build output. Pages build to
   // /path/index.html; the default html_handling redirects /path to /path/.
